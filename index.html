@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0a4d68" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TravelFX" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="manifest" href="manifest.json" />
+<title>TravelFX — Currency for Travelers</title>
+
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --card-elev: #ffffff;
+    --ink: #0e1e2b;
+    --ink-2: #4a5b6b;
+    --ink-3: #7d8d9d;
+    --line: #e5ecf3;
+    --line-2: #eef3f8;
+    --primary: #0a4d68;
+    --primary-2: #088395;
+    --accent: #d4a017;
+    --accent-2: #f6c351;
+    --success: #1f9d55;
+    --danger: #d14545;
+    --shadow-sm: 0 1px 2px rgba(14,30,43,0.04), 0 1px 3px rgba(14,30,43,0.06);
+    --shadow-md: 0 4px 14px rgba(10,77,104,0.08), 0 2px 4px rgba(10,77,104,0.05);
+    --shadow-lg: 0 14px 40px rgba(10,77,104,0.14);
+    --radius: 16px;
+    --radius-sm: 12px;
+    --radius-lg: 22px;
+    --tap-h: 48px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1419;
+      --card: #15222b;
+      --card-elev: #1a2932;
+      --ink: #ecf3f8;
+      --ink-2: #a9bbc7;
+      --ink-3: #6f8290;
+      --line: #243440;
+      --line-2: #1d2c36;
+      --primary: #67d2e6;
+      --primary-2: #a4ecff;
+      --accent: #f6c351;
+      --accent-2: #ffd97a;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 14px rgba(0,0,0,0.4);
+      --shadow-lg: 0 14px 40px rgba(0,0,0,0.5);
+    }
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+                 system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+  }
+
+  button { font: inherit; color: inherit; background: transparent; border: 0; cursor: pointer; }
+  input, select { font: inherit; color: inherit; }
+  input[type="number"] { -moz-appearance: textfield; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+
+  .app {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    padding-top: var(--safe-top);
+    padding-bottom: calc(72px + var(--safe-bottom));
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  .header {
+    padding: 14px 20px 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo {
+    width: 40px; height: 40px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+    display: grid; place-items: center; box-shadow: var(--shadow-md);
+    position: relative; flex: 0 0 auto;
+  }
+  .logo svg { width: 26px; height: 26px; }
+  .header-text h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .header-text p { margin: 1px 0 0; font-size: 12px; color: var(--ink-3); }
+  .header .status {
+    margin-left: auto; display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--ink-3);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+  .dot.live { background: var(--success); animation: pulse 2.4s infinite; }
+  .dot.cached { background: var(--accent); }
+  .dot.error { background: var(--danger); }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(31,157,85,0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(31,157,85,0); }
+    100% { box-shadow: 0 0 0 0 rgba(31,157,85,0); }
+  }
+
+  .views { flex: 1; padding: 4px 16px 24px; }
+  .view { display: none; animation: fade .25s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid var(--line-2);
+  }
+  .card.glow {
+    background: linear-gradient(135deg, var(--card) 0%, var(--card-elev) 100%);
+    box-shadow: var(--shadow-md);
+  }
+  .card h2 {
+    margin: 0 0 10px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .card .row { display: flex; align-items: center; gap: 12px; }
+  .card .row + .row { margin-top: 10px; }
+
+  .toggle {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--line-2); border-radius: 12px; padding: 4px;
+    margin-bottom: 14px;
+  }
+  .toggle button {
+    height: 40px; border-radius: 9px; font-weight: 600;
+    color: var(--ink-2); transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 14px;
+  }
+  .toggle button.active {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+  }
+  .toggle button svg { width: 14px; height: 14px; }
+
+  .cur-pick {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    background: var(--line-2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .15s;
+    width: 100%;
+    text-align: left;
+    min-height: var(--tap-h);
+  }
+  .cur-pick:active { transform: scale(0.99); }
+  .cur-pick .flag { font-size: 24px; line-height: 1; }
+  .cur-pick .meta { flex: 1; min-width: 0; }
+  .cur-pick .code { font-weight: 700; font-size: 15px; }
+  .cur-pick .name { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cur-pick .chevron { color: var(--ink-3); font-size: 14px; }
+
+  .field {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--line-2);
+    border-radius: 12px;
+    padding: 0 14px;
+    height: 56px;
+    border: 2px solid transparent;
+    transition: border-color .15s, background .15s;
+  }
+  .field:focus-within { border-color: var(--primary); background: var(--card); }
+  .field .prefix, .field .suffix {
+    font-weight: 600; color: var(--ink-3); font-size: 18px;
+    flex: 0 0 auto;
+  }
+  .field input {
+    flex: 1; min-width: 0;
+    border: 0; outline: 0; background: transparent;
+    font-size: 22px; font-weight: 600; color: var(--ink);
+    padding: 0; height: 100%;
+  }
+  .field input::placeholder { color: var(--ink-3); font-weight: 500; }
+  .field-group { display: flex; flex-direction: column; gap: 8px; }
+  .field-mini {
+    height: 44px; padding: 0 12px;
+    background: var(--line-2); border-radius: 10px;
+    display: flex; align-items: center; gap: 6px;
+    border: 2px solid transparent;
+    transition: border-color .15s;
+  }
+  .field-mini:focus-within { border-color: var(--primary); }
+  .field-mini input {
+    flex: 1; min-width: 0; width: 100%;
+    border: 0; outline: 0; background: transparent;
+    font-size: 15px; font-weight: 600; text-align: right; color: var(--ink);
+    padding: 0;
+  }
+  .field-mini .pct { font-size: 13px; color: var(--ink-3); }
+
+  .switch-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    gap: 12px;
+  }
+  .switch-row + .switch-row { border-top: 1px solid var(--line); }
+  .switch-row .lbl { font-size: 14px; color: var(--ink); font-weight: 500; }
+  .switch-row .sub { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+  .switch {
+    position: relative; width: 48px; height: 28px; flex: 0 0 auto;
+    background: var(--line); border-radius: 999px; transition: background .2s;
+    cursor: pointer;
+  }
+  .switch::after {
+    content: ""; position: absolute; left: 3px; top: 3px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    transition: left .2s;
+  }
+  .switch.on { background: var(--primary); }
+  .switch.on::after { left: 23px; }
+
+  .result {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+    color: #fff;
+    border-radius: var(--radius-lg);
+    padding: 22px 20px;
+    margin: 16px 0;
+    box-shadow: var(--shadow-lg);
+    position: relative; overflow: hidden;
+  }
+  .result::before {
+    content: ""; position: absolute; top: -40%; right: -20%;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .result::after {
+    content: ""; position: absolute; bottom: -50%; left: -10%;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .result .label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; position: relative; }
+  .result .big { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; line-height: 1.05; word-break: break-word; position: relative; }
+  .result .secondary {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px;
+    font-size: 13px;
+    position: relative;
+  }
+  .result .secondary .k { opacity: 0.78; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .result .secondary .v { font-weight: 600; font-size: 15px; }
+  .result .rate-line { margin-top: 12px; font-size: 12px; opacity: 0.78; position: relative; }
+
+  .pin-list { display: flex; flex-direction: column; gap: 8px; }
+  .pin-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border-radius: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--line-2);
+    box-shadow: var(--shadow-sm);
+  }
+  .pin-item .flag { font-size: 26px; line-height: 1; }
+  .pin-item .meta { flex: 1; min-width: 0; }
+  .pin-item .code { font-weight: 700; font-size: 15px; }
+  .pin-item .rate { font-size: 11px; color: var(--ink-3); }
+  .pin-item .val { font-weight: 700; font-size: 17px; text-align: right; }
+  .pin-item .val .sub { font-size: 11px; color: var(--ink-3); font-weight: 500; display: block; }
+  .pin-item .rm {
+    width: 30px; height: 30px; border-radius: 50%;
+    color: var(--ink-3); display: grid; place-items: center;
+  }
+  .pin-item .rm:hover { color: var(--danger); background: var(--line-2); }
+
+  .btn {
+    height: 48px; padding: 0 18px;
+    border-radius: 12px; font-weight: 600; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform .1s, opacity .15s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-2); }
+  .btn-secondary { background: var(--line-2); color: var(--ink); }
+  .btn-ghost { background: transparent; color: var(--primary); }
+  .btn svg { width: 16px; height: 16px; }
+  .btn-block { width: 100%; }
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .nav {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid var(--line);
+    padding-bottom: var(--safe-bottom);
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    z-index: 50;
+    max-width: 540px; margin: 0 auto;
+  }
+  @media (prefers-color-scheme: dark) {
+    .nav { background: rgba(11,20,25,0.88); }
+  }
+  .nav button {
+    height: 60px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; color: var(--ink-3); font-size: 11px; font-weight: 500;
+  }
+  .nav button.active { color: var(--primary); }
+  .nav button svg { width: 22px; height: 22px; }
+
+  .modal-back {
+    position: fixed; inset: 0;
+    background: rgba(14,30,43,0.5);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+    backdrop-filter: blur(4px);
+  }
+  .modal-back.open { opacity: 1; pointer-events: auto; }
+  .modal {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-width: 540px; margin: 0 auto;
+    background: var(--card);
+    border-radius: 22px 22px 0 0;
+    z-index: 101;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 85vh;
+    display: flex; flex-direction: column;
+    padding-bottom: var(--safe-bottom);
+  }
+  .modal.open { transform: translateY(0); }
+  .modal-head {
+    padding: 12px 16px 8px; text-align: center;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .modal-grip {
+    width: 40px; height: 5px; background: var(--line);
+    border-radius: 999px; margin: 0 auto 10px;
+  }
+  .modal-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+  .search {
+    margin: 10px 16px 8px;
+    background: var(--line-2);
+    border-radius: 11px;
+    padding: 0 12px; height: 40px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .search input {
+    flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+    font-size: 15px; color: var(--ink);
+  }
+  .search svg { width: 16px; height: 16px; color: var(--ink-3); }
+  .modal-list { flex: 1; overflow-y: auto; padding: 4px 8px 16px; -webkit-overflow-scrolling: touch; }
+  .modal-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 12px;
+    border-radius: 11px;
+    cursor: pointer;
+  }
+  .modal-row:active, .modal-row.selected { background: var(--line-2); }
+  .modal-row .flag { font-size: 24px; line-height: 1; }
+  .modal-row .meta { flex: 1; min-width: 0; }
+  .modal-row .code { font-weight: 700; font-size: 15px; }
+  .modal-row .name { font-size: 12px; color: var(--ink-3); }
+  .modal-row .pin-tog {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; color: var(--ink-3);
+  }
+  .modal-row .pin-tog.pinned { color: var(--accent); }
+  .modal-row .pin-tog svg { width: 18px; height: 18px; }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%) translateY(20px);
+    bottom: calc(80px + var(--safe-bottom));
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0; pointer-events: none;
+    transition: all .25s;
+    z-index: 200;
+    max-width: 90%; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.error { background: var(--danger); color: #fff; }
+
+  .empty {
+    text-align: center; padding: 32px 16px;
+    color: var(--ink-3); font-size: 14px;
+  }
+  .empty .em { font-size: 36px; margin-bottom: 8px; opacity: 0.5; }
+
+  .options-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0;
+    color: var(--ink-2); font-size: 14px; font-weight: 500;
+    cursor: pointer;
+  }
+  .options-toggle .chev { transition: transform .2s; font-size: 13px; }
+  .options-toggle.open .chev { transform: rotate(180deg); }
+  .options-body { display: none; padding-top: 6px; }
+  .options-body.open { display: block; }
+
+  .divider { height: 1px; background: var(--line); margin: 14px 0; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden-input { display: none; }
+  .meta-line { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M2 11.5l18.5-7-7 18.5-2.6-7.4-7.4-2.6-1.5-1.5z" fill="#fff" opacity="0.95"/>
+        <text x="13.5" y="20" fill="#FFD568" font-size="9" font-weight="800" font-family="-apple-system,sans-serif">$</text>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>TravelFX</h1>
+      <p>Smart currency for travelers</p>
+    </div>
+    <div class="status" id="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Loading…</span>
+    </div>
+  </div>
+
+  <div class="views">
+
+    <!-- CONVERT -->
+    <section class="view active" id="view-convert">
+
+      <div class="card glow">
+        <div class="toggle" role="tablist">
+          <button id="dirUSDtoFX" class="active" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            USD → Foreign
+          </button>
+          <button id="dirFXtoUSD" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+            Foreign → USD
+          </button>
+        </div>
+
+        <button class="cur-pick" id="curPickBtn" type="button" aria-label="Choose currency">
+          <span class="flag" id="curFlag">🇪🇺</span>
+          <span class="meta">
+            <div class="code" id="curCode">EUR · Euro</div>
+            <div class="name" id="curRate">1 USD = — EUR</div>
+          </span>
+          <span class="chevron">▾</span>
+        </button>
+
+        <div style="height:12px"></div>
+
+        <div class="field-group">
+          <div class="field" id="amountField">
+            <span class="prefix" id="amountPrefix">$</span>
+            <input id="amountInput" type="number" inputmode="decimal" step="0.01" placeholder="0.00" autocomplete="off"/>
+            <span class="suffix" id="amountSuffix">USD</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="options-toggle" id="optsToggle">
+          <span>Tax · VAT · Discount</span>
+          <span class="chev">▾</span>
+        </div>
+        <div class="options-body" id="optsBody">
+
+          <div class="switch-row">
+            <div>
+              <div class="lbl">Add U.S. sales tax</div>
+              <div class="sub" id="taxSubLabel">Adds 7.5% to USD before converting</div>
+            </div>
+            <div class="switch" id="taxSwitch" role="switch" aria-checked="false"></div>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <div class="lbl">Custom tax rate</div>
+              <div class="sub">Default 7.5%</div>
+            </div>
+            <div class="field-mini" style="width:108px">
+              <input id="taxRate" type="number" step="0.1" min="0" max="100" value="7.5" inputmode="decimal"/>
+              <span class="pct">%</span>
+            </div>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <div class="lbl">VAT (foreign)</div>
+              <div class="sub">Added to foreign price</div>
+            </div>
+            <div class="field-mini" style="width:108px">
+              <input id="vatRate" type="number" step="0.1" min="0" max="100" value="0" inputmode="decimal"/>
+              <span class="pct">%</span>
+            </div>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <div class="lbl">Discount</div>
+              <div class="sub">Subtracted from foreign price</div>
+            </div>
+            <div class="field-mini" style="width:108px">
+              <input id="discRate" type="number" step="0.1" min="0" max="100" value="0" inputmode="decimal"/>
+              <span class="pct">%</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="result" id="resultCard">
+        <div class="label" id="resultLabel">Maximum price</div>
+        <div class="big" id="resultBig">€0.00</div>
+        <div class="secondary" id="resultSecondary"></div>
+        <div class="rate-line" id="resultRate">Rate unavailable</div>
+      </div>
+
+    </section>
+
+    <!-- PINNED -->
+    <section class="view" id="view-pinned">
+
+      <div class="card">
+        <h2>Quick conversion</h2>
+        <div class="row">
+          <div class="field" style="flex:1">
+            <span class="prefix">$</span>
+            <input id="pinAmount" type="number" inputmode="decimal" step="0.01" placeholder="100" value="100"/>
+            <span class="suffix">USD</span>
+          </div>
+        </div>
+        <div class="meta-line">Showing what <span id="pinAmtLbl">$100</span> equals in your pinned currencies.</div>
+      </div>
+
+      <div class="card" style="padding:14px 16px">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+          <h2 style="margin:0">Pinned currencies</h2>
+          <button class="btn btn-ghost" id="addPinBtn" style="height:36px; padding:0 10px; font-size:13px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+            Add
+          </button>
+        </div>
+        <div class="pin-list" id="pinList"></div>
+        <div class="empty" id="pinEmpty" style="display:none">
+          <div class="em">📌</div>
+          <div>No pinned currencies yet.<br/>Tap <strong>Add</strong> to pin the ones you use most.</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings">
+
+      <div class="card">
+        <h2>Exchange rates</h2>
+        <div class="meta-line" id="ratesMeta">—</div>
+        <div style="height:10px"></div>
+        <button class="btn btn-secondary btn-block" id="refreshBtn">
+          <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/>
+          </svg>
+          Refresh now
+        </button>
+      </div>
+
+      <div class="card">
+        <h2>Defaults</h2>
+        <div class="switch-row">
+          <div>
+            <div class="lbl">Default tax rate</div>
+            <div class="sub">Used by the "Add U.S. sales tax" toggle</div>
+          </div>
+          <div class="field-mini" style="width:108px">
+            <input id="defTaxRate" type="number" step="0.1" min="0" max="100" value="7.5" inputmode="decimal"/>
+            <span class="pct">%</span>
+          </div>
+        </div>
+        <div class="switch-row">
+          <div>
+            <div class="lbl">Default VAT</div>
+            <div class="sub">Pre-fills the VAT field</div>
+          </div>
+          <div class="field-mini" style="width:108px">
+            <input id="defVat" type="number" step="0.1" min="0" max="100" value="0" inputmode="decimal"/>
+            <span class="pct">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Data — phone transfer & backup</h2>
+        <div class="meta-line">Settings stay on this iPhone. Use these to move them.</div>
+        <div style="height:10px"></div>
+        <div class="btn-grid">
+          <button class="btn btn-secondary" id="exportJsonBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+            Export
+          </button>
+          <button class="btn btn-secondary" id="importJsonBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14"/></svg>
+            Import
+          </button>
+        </div>
+        <div style="height:8px"></div>
+        <button class="btn btn-secondary btn-block" id="exportXlsxBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8l6 8M15 8l-6 8"/></svg>
+          Export to Excel (.xlsx)
+        </button>
+        <input id="importFile" type="file" accept="application/json,.json" class="hidden-input"/>
+      </div>
+
+      <div class="card">
+        <h2>About</h2>
+        <div class="meta-line">
+          <strong>TravelFX</strong> — currency at a glance for trips abroad. Live rates from <em>open.er-api.com</em>. Data stored locally on your device.
+        </div>
+        <div style="height:8px"></div>
+        <div class="meta-line">
+          v1.0 · Built for iPhone · Add to Home Screen for full-screen mode.
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <nav class="nav" id="nav">
+    <button data-view="convert" class="active" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3l4 4-4 4M20 7H8M8 21l-4-4 4-4M4 17h12"/></svg>
+      Convert
+    </button>
+    <button data-view="pinned" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M5 12h14a3 3 0 003-3l-3-6H5L2 9a3 3 0 003 3z"/></svg>
+      Pinned
+    </button>
+    <button data-view="settings" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+
+</div>
+
+<div class="modal-back" id="modalBack"></div>
+<div class="modal" id="curModal" role="dialog" aria-label="Choose currency">
+  <div class="modal-head">
+    <div class="modal-grip"></div>
+    <h3 id="modalTitle">Choose currency</h3>
+  </div>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="curSearch" placeholder="Search currency or country" autocomplete="off"/>
+  </div>
+  <div class="modal-list" id="modalList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ============================================================
+   TravelFX — single-file currency converter for travelers
+   ============================================================ */
+
+const CURRENCIES = {
+  USD: { name: "US Dollar",          flag: "🇺🇸", symbol: "$",   decimals: 2 },
+  EUR: { name: "Euro",               flag: "🇪🇺", symbol: "€",   decimals: 2 },
+  GBP: { name: "British Pound",      flag: "🇬🇧", symbol: "£",   decimals: 2 },
+  JPY: { name: "Japanese Yen",       flag: "🇯🇵", symbol: "¥",   decimals: 0 },
+  CHF: { name: "Swiss Franc",        flag: "🇨🇭", symbol: "Fr.", decimals: 2 },
+  CAD: { name: "Canadian Dollar",    flag: "🇨🇦", symbol: "C$",  decimals: 2 },
+  AUD: { name: "Australian Dollar",  flag: "🇦🇺", symbol: "A$",  decimals: 2 },
+  NZD: { name: "New Zealand Dollar", flag: "🇳🇿", symbol: "NZ$", decimals: 2 },
+  CNY: { name: "Chinese Yuan",       flag: "🇨🇳", symbol: "¥",   decimals: 2 },
+  HKD: { name: "Hong Kong Dollar",   flag: "🇭🇰", symbol: "HK$", decimals: 2 },
+  SGD: { name: "Singapore Dollar",   flag: "🇸🇬", symbol: "S$",  decimals: 2 },
+  INR: { name: "Indian Rupee",       flag: "🇮🇳", symbol: "₹",   decimals: 2 },
+  KRW: { name: "South Korean Won",   flag: "🇰🇷", symbol: "₩",   decimals: 0 },
+  THB: { name: "Thai Baht",          flag: "🇹🇭", symbol: "฿",   decimals: 2 },
+  VND: { name: "Vietnamese Dong",    flag: "🇻🇳", symbol: "₫",   decimals: 0 },
+  IDR: { name: "Indonesian Rupiah",  flag: "🇮🇩", symbol: "Rp",  decimals: 0 },
+  MYR: { name: "Malaysian Ringgit",  flag: "🇲🇾", symbol: "RM",  decimals: 2 },
+  PHP: { name: "Philippine Peso",    flag: "🇵🇭", symbol: "₱",   decimals: 2 },
+  TWD: { name: "Taiwan Dollar",      flag: "🇹🇼", symbol: "NT$", decimals: 2 },
+  AED: { name: "UAE Dirham",         flag: "🇦🇪", symbol: "AED ", decimals: 2 },
+  SAR: { name: "Saudi Riyal",        flag: "🇸🇦", symbol: "SAR ", decimals: 2 },
+  ILS: { name: "Israeli Shekel",     flag: "🇮🇱", symbol: "₪",   decimals: 2 },
+  TRY: { name: "Turkish Lira",       flag: "🇹🇷", symbol: "₺",   decimals: 2 },
+  ZAR: { name: "South African Rand", flag: "🇿🇦", symbol: "R",   decimals: 2 },
+  EGP: { name: "Egyptian Pound",     flag: "🇪🇬", symbol: "E£",  decimals: 2 },
+  MAD: { name: "Moroccan Dirham",    flag: "🇲🇦", symbol: "DH",  decimals: 2 },
+  MXN: { name: "Mexican Peso",       flag: "🇲🇽", symbol: "MX$", decimals: 2 },
+  BRL: { name: "Brazilian Real",     flag: "🇧🇷", symbol: "R$",  decimals: 2 },
+  ARS: { name: "Argentine Peso",     flag: "🇦🇷", symbol: "AR$", decimals: 2 },
+  CLP: { name: "Chilean Peso",       flag: "🇨🇱", symbol: "CLP$", decimals: 0 },
+  COP: { name: "Colombian Peso",     flag: "🇨🇴", symbol: "COL$", decimals: 0 },
+  PEN: { name: "Peruvian Sol",       flag: "🇵🇪", symbol: "S/",  decimals: 2 },
+  CRC: { name: "Costa Rican Colón",  flag: "🇨🇷", symbol: "₡",   decimals: 0 },
+  SEK: { name: "Swedish Krona",      flag: "🇸🇪", symbol: "kr",  decimals: 2 },
+  NOK: { name: "Norwegian Krone",    flag: "🇳🇴", symbol: "kr",  decimals: 2 },
+  DKK: { name: "Danish Krone",       flag: "🇩🇰", symbol: "kr",  decimals: 2 },
+  ISK: { name: "Icelandic Króna",    flag: "🇮🇸", symbol: "kr",  decimals: 0 },
+  PLN: { name: "Polish Zloty",       flag: "🇵🇱", symbol: "zł",  decimals: 2 },
+  CZK: { name: "Czech Koruna",       flag: "🇨🇿", symbol: "Kč",  decimals: 2 },
+  HUF: { name: "Hungarian Forint",   flag: "🇭🇺", symbol: "Ft",  decimals: 0 },
+  RON: { name: "Romanian Leu",       flag: "🇷🇴", symbol: "lei", decimals: 2 },
+  BGN: { name: "Bulgarian Lev",      flag: "🇧🇬", symbol: "лв",  decimals: 2 },
+  UAH: { name: "Ukrainian Hryvnia",  flag: "🇺🇦", symbol: "₴",   decimals: 2 },
+  RUB: { name: "Russian Ruble",      flag: "🇷🇺", symbol: "₽",   decimals: 2 },
+  KZT: { name: "Kazakhstani Tenge",  flag: "🇰🇿", symbol: "₸",   decimals: 2 },
+  PKR: { name: "Pakistani Rupee",    flag: "🇵🇰", symbol: "₨",   decimals: 2 },
+  BDT: { name: "Bangladeshi Taka",   flag: "🇧🇩", symbol: "৳",   decimals: 2 },
+  NGN: { name: "Nigerian Naira",     flag: "🇳🇬", symbol: "₦",   decimals: 2 },
+  KES: { name: "Kenyan Shilling",    flag: "🇰🇪", symbol: "KSh", decimals: 2 },
+  GHS: { name: "Ghanaian Cedi",      flag: "🇬🇭", symbol: "₵",   decimals: 2 },
+  XOF: { name: "West African CFA",   flag: "🌍", symbol: "CFA",  decimals: 0 },
+  XAF: { name: "Central African CFA", flag: "🌍", symbol: "FCFA", decimals: 0 },
+  JMD: { name: "Jamaican Dollar",    flag: "🇯🇲", symbol: "J$",  decimals: 2 },
+  DOP: { name: "Dominican Peso",     flag: "🇩🇴", symbol: "RD$", decimals: 2 },
+  QAR: { name: "Qatari Riyal",       flag: "🇶🇦", symbol: "QR",  decimals: 2 },
+  KWD: { name: "Kuwaiti Dinar",      flag: "🇰🇼", symbol: "KD",  decimals: 3 },
+  BHD: { name: "Bahraini Dinar",     flag: "🇧🇭", symbol: "BD",  decimals: 3 },
+  OMR: { name: "Omani Rial",         flag: "🇴🇲", symbol: "OMR ", decimals: 3 },
+  JOD: { name: "Jordanian Dinar",    flag: "🇯🇴", symbol: "JD",  decimals: 3 },
+};
+
+const STORE_KEY = "travelfx.v1";
+const RATES_KEY = "travelfx.rates.v1";
+const RATES_URL = "https://open.er-api.com/v6/latest/USD";
+
+const defaultState = {
+  pinned: ["EUR", "GBP", "JPY", "MXN"],
+  selectedCurrency: "EUR",
+  direction: "USD2FX",
+  amount: "100",
+  pinAmount: "100",
+  taxOn: false,
+  taxRate: 7.5,
+  vatRate: 0,
+  discRate: 0,
+  defTaxRate: 7.5,
+  defVat: 0,
+};
+
+let state = loadState();
+let rates = loadRates();
+
+/* STORAGE */
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return { ...defaultState };
+    return { ...defaultState, ...JSON.parse(raw) };
+  } catch { return { ...defaultState }; }
+}
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {}
+}
+function loadRates() {
+  try {
+    const raw = localStorage.getItem(RATES_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+function saveRates(r) {
+  try { localStorage.setItem(RATES_KEY, JSON.stringify(r)); } catch {}
+}
+
+/* FORMATTING */
+function fmt(amount, code, opts = {}) {
+  if (!isFinite(amount)) return "—";
+  const meta = CURRENCIES[code] || { decimals: 2, symbol: code };
+  const decimals = opts.decimals ?? meta.decimals;
+  const n = Number(amount).toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  if (opts.bare) return n;
+  return `${meta.symbol}${n}`;
+}
+function fmtRel(ts) {
+  if (!ts) return "—";
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s/60)} min ago`;
+  if (s < 86400) return `${Math.floor(s/3600)} hr ago`;
+  return `${Math.floor(s/86400)} day${Math.floor(s/86400)>1?"s":""} ago`;
+}
+
+/* RATES */
+async function fetchRates() {
+  setStatus("loading", "Updating…");
+  spinRefresh(true);
+  try {
+    const res = await fetch(RATES_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (!data || data.result !== "success" || !data.rates) throw new Error("Bad payload");
+    rates = {
+      rates: data.rates,
+      fetched: Date.now(),
+      source: "live",
+      providerUpdated: data.time_last_update_unix ? data.time_last_update_unix * 1000 : null,
+    };
+    saveRates(rates);
+    setStatus("live", "Live");
+    render();
+    return true;
+  } catch (e) {
+    if (rates && rates.rates) setStatus("cached", "Cached");
+    else setStatus("error", "Offline");
+    render();
+    return false;
+  } finally {
+    spinRefresh(false);
+    updateRatesMeta();
+  }
+}
+function spinRefresh(on) {
+  const el = document.getElementById("refreshIcon");
+  if (!el) return;
+  el.classList.toggle("spin", !!on);
+}
+function setStatus(kind, label) {
+  const dot = document.getElementById("statusDot");
+  const txt = document.getElementById("statusText");
+  dot.className = "dot " + (kind === "live" ? "live" : kind === "cached" ? "cached" : kind === "error" ? "error" : "");
+  txt.textContent = label;
+}
+function updateRatesMeta() {
+  const meta = document.getElementById("ratesMeta");
+  if (!rates) { meta.textContent = "No rates yet — tap Refresh to fetch."; return; }
+  const fetchedAgo = fmtRel(rates.fetched);
+  const provider = rates.providerUpdated ? new Date(rates.providerUpdated).toLocaleString() : "—";
+  meta.innerHTML = `Last update <strong>${fetchedAgo}</strong> · provider <em>${provider}</em><br/>${Object.keys(rates.rates||{}).length} currencies cached.`;
+}
+function rateOf(code) {
+  if (!rates || !rates.rates) return null;
+  if (code === "USD") return 1;
+  return rates.rates[code] ?? null;
+}
+
+/* CALCULATIONS */
+function calcUSDtoFX(input, code) {
+  const rate = rateOf(code);
+  if (!isFinite(input) || rate == null) return null;
+  const taxMult = state.taxOn ? (1 + state.taxRate / 100) : 1;
+  const usdTotal = input * taxMult;
+  const baseFx = usdTotal * rate;
+  const vatAdj = baseFx * (1 + state.vatRate / 100);
+  const final = vatAdj * (1 - state.discRate / 100);
+  return {
+    rate, usdBase: input, usdAfterTax: usdTotal,
+    fxBare: input * rate, fxAfterTax: baseFx,
+    fxAfterVat: vatAdj, fxFinal: final,
+  };
+}
+function calcFXtoUSD(input, code) {
+  const rate = rateOf(code);
+  if (!isFinite(input) || rate == null || rate === 0) return null;
+  const usd = input / rate;
+  const usdWithTax = usd * (1 + state.taxRate / 100);
+  return { rate, fxBase: input, usd, usdWithTax };
+}
+
+/* RENDER */
+function render() { renderConvert(); renderPinned(); renderSettings(); }
+
+function renderConvert() {
+  const code = state.selectedCurrency;
+  const meta = CURRENCIES[code];
+  const rate = rateOf(code);
+
+  document.getElementById("curFlag").textContent = meta?.flag || "💱";
+  document.getElementById("curCode").textContent = `${code} · ${meta?.name || code}`;
+  document.getElementById("curRate").textContent =
+    rate != null ? `1 USD = ${fmt(rate, code, { bare: true })} ${code}` : `1 USD = — ${code}`;
+
+  const isUSD2FX = state.direction === "USD2FX";
+  document.getElementById("dirUSDtoFX").classList.toggle("active", isUSD2FX);
+  document.getElementById("dirFXtoUSD").classList.toggle("active", !isUSD2FX);
+
+  if (isUSD2FX) {
+    document.getElementById("amountPrefix").textContent = "$";
+    document.getElementById("amountSuffix").textContent = "USD";
+  } else {
+    document.getElementById("amountPrefix").textContent = (meta?.symbol || code).trim();
+    document.getElementById("amountSuffix").textContent = code;
+  }
+  const amtEl = document.getElementById("amountInput");
+  if (document.activeElement !== amtEl) amtEl.value = state.amount ?? "";
+
+  document.getElementById("taxSubLabel").textContent = `Adds ${state.taxRate}% to USD before converting`;
+  document.getElementById("taxSwitch").classList.toggle("on", !!state.taxOn);
+  if (document.activeElement.id !== "taxRate") document.getElementById("taxRate").value = state.taxRate;
+  if (document.activeElement.id !== "vatRate") document.getElementById("vatRate").value = state.vatRate;
+  if (document.activeElement.id !== "discRate") document.getElementById("discRate").value = state.discRate;
+
+  const amount = parseFloat(state.amount);
+  const sec = document.getElementById("resultSecondary");
+  const big = document.getElementById("resultBig");
+  const lbl = document.getElementById("resultLabel");
+  const rl = document.getElementById("resultRate");
+
+  if (rate == null) {
+    big.textContent = "—";
+    lbl.textContent = "Rates unavailable";
+    sec.innerHTML = "";
+    rl.textContent = "Tap Settings → Refresh to load rates";
+    return;
+  }
+  if (!isFinite(amount) || amount === 0) {
+    big.textContent = isUSD2FX ? fmt(0, code) : fmt(0, "USD");
+    lbl.textContent = isUSD2FX ? "Maximum price" : "USD equivalent";
+    sec.innerHTML = "";
+    rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code} · 1 ${code} = ${fmt(1/rate, "USD", { bare: true, decimals: 4 })} USD`;
+    return;
+  }
+
+  if (isUSD2FX) {
+    const r = calcUSDtoFX(amount, code);
+    lbl.textContent = "Maximum price";
+    big.textContent = fmt(r.fxFinal, code);
+    const rows = [];
+    rows.push({ k: "Direct conversion", v: fmt(r.fxBare, code) });
+    if (state.taxOn) rows.push({ k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.fxAfterTax, code) });
+    if (state.vatRate > 0) rows.push({ k: `+ ${state.vatRate}% VAT`, v: fmt(r.fxAfterVat, code) });
+    if (state.discRate > 0) rows.push({ k: `− ${state.discRate}% discount`, v: fmt(r.fxFinal, code) });
+    rows.push({ k: "USD basis", v: fmt(state.taxOn ? r.usdAfterTax : r.usdBase, "USD") });
+    sec.innerHTML = rows.map(x =>
+      `<div><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
+    ).join("");
+    rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code}`;
+  } else {
+    const r = calcFXtoUSD(amount, code);
+    lbl.textContent = "USD equivalent";
+    big.textContent = fmt(r.usd, "USD");
+    const rows = [
+      { k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.usdWithTax, "USD") },
+      { k: "Foreign basis", v: fmt(r.fxBase, code) },
+    ];
+    sec.innerHTML = rows.map(x =>
+      `<div><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
+    ).join("");
+    rl.textContent = `1 ${code} = ${fmt(1/rate, "USD", { bare: true, decimals: 4 })} USD`;
+  }
+}
+
+function renderPinned() {
+  const ul = document.getElementById("pinList");
+  const empty = document.getElementById("pinEmpty");
+  ul.innerHTML = "";
+  const pinAmtEl = document.getElementById("pinAmount");
+  if (document.activeElement !== pinAmtEl) pinAmtEl.value = state.pinAmount ?? "";
+  const usd = parseFloat(state.pinAmount) || 0;
+  document.getElementById("pinAmtLbl").textContent = fmt(usd, "USD");
+
+  if (!state.pinned.length) { empty.style.display = ""; return; }
+  empty.style.display = "none";
+
+  state.pinned.forEach(code => {
+    const meta = CURRENCIES[code];
+    const r = rateOf(code);
+    const v = (r != null) ? usd * r : null;
+    const row = document.createElement("div");
+    row.className = "pin-item";
+    row.innerHTML = `
+      <span class="flag">${meta?.flag || "💱"}</span>
+      <div class="meta">
+        <div class="code">${code}</div>
+        <div class="rate">${meta?.name || code}${r != null ? ` · 1 USD = ${fmt(r, code, { bare: true })}` : ""}</div>
+      </div>
+      <div class="val">
+        ${v != null ? fmt(v, code) : "—"}
+        <span class="sub">${r != null ? fmt(usd, "USD") : "no rate"}</span>
+      </div>
+      <button class="rm" data-code="${code}" aria-label="Remove ${code}" title="Unpin">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    `;
+    row.querySelector(".rm").onclick = () => {
+      state.pinned = state.pinned.filter(c => c !== code);
+      saveState(); render();
+      toast(`Unpinned ${code}`);
+    };
+    ul.appendChild(row);
+  });
+}
+
+function renderSettings() {
+  if (document.activeElement.id !== "defTaxRate") document.getElementById("defTaxRate").value = state.defTaxRate;
+  if (document.activeElement.id !== "defVat") document.getElementById("defVat").value = state.defVat;
+}
+
+/* MODAL */
+let modalMode = "select";
+function openCurrencyModal(mode = "select") {
+  modalMode = mode;
+  document.getElementById("modalTitle").textContent =
+    mode === "pin" ? "Pin currencies" : "Choose currency";
+  document.getElementById("curSearch").value = "";
+  renderModalList("");
+  document.getElementById("modalBack").classList.add("open");
+  document.getElementById("curModal").classList.add("open");
+  setTimeout(() => document.getElementById("curSearch").focus(), 250);
+}
+function closeCurrencyModal() {
+  document.getElementById("modalBack").classList.remove("open");
+  document.getElementById("curModal").classList.remove("open");
+}
+function renderModalList(query) {
+  const list = document.getElementById("modalList");
+  const q = (query || "").toLowerCase().trim();
+  list.innerHTML = "";
+  const codes = Object.keys(CURRENCIES).filter(c => c !== "USD");
+  codes.sort((a, b) => {
+    const pa = state.pinned.indexOf(a), pb = state.pinned.indexOf(b);
+    if (pa !== -1 && pb === -1) return -1;
+    if (pb !== -1 && pa === -1) return 1;
+    if (pa !== -1 && pb !== -1) return pa - pb;
+    return a.localeCompare(b);
+  });
+  let count = 0;
+  for (const code of codes) {
+    const m = CURRENCIES[code];
+    if (q && !(code.toLowerCase().includes(q) || m.name.toLowerCase().includes(q))) continue;
+    const isPinned = state.pinned.includes(code);
+    const r = rateOf(code);
+    const row = document.createElement("div");
+    row.className = "modal-row";
+    if (modalMode === "select" && code === state.selectedCurrency) row.classList.add("selected");
+    row.innerHTML = `
+      <span class="flag">${m.flag}</span>
+      <div class="meta">
+        <div class="code">${code}</div>
+        <div class="name">${m.name}${r != null ? ` · 1 USD = ${fmt(r, code, { bare:true })}` : ""}</div>
+      </div>
+      <button class="pin-tog ${isPinned ? "pinned" : ""}" aria-label="${isPinned ? "Unpin" : "Pin"} ${code}" title="${isPinned ? "Unpin" : "Pin"}">
+        <svg viewBox="0 0 24 24" fill="${isPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2"><path d="M12 17v5M5 12h14a3 3 0 003-3l-3-6H5L2 9a3 3 0 003 3z"/></svg>
+      </button>
+    `;
+    row.querySelector(".pin-tog").onclick = (e) => {
+      e.stopPropagation();
+      if (state.pinned.includes(code)) {
+        state.pinned = state.pinned.filter(c => c !== code);
+        toast(`Unpinned ${code}`);
+      } else {
+        state.pinned = [...state.pinned, code];
+        toast(`Pinned ${code}`);
+      }
+      saveState(); render();
+      renderModalList(document.getElementById("curSearch").value);
+    };
+    row.onclick = () => {
+      if (modalMode === "select") {
+        state.selectedCurrency = code;
+        saveState(); render();
+        closeCurrencyModal();
+      }
+    };
+    list.appendChild(row);
+    count++;
+  }
+  if (!count) {
+    list.innerHTML = `<div class="empty"><div class="em">🔍</div>No currencies match "${query}"</div>`;
+  }
+}
+
+/* IMPORT / EXPORT / EXCEL */
+function exportJson() {
+  const payload = {
+    app: "TravelFX",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    state, rates,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const date = new Date().toISOString().slice(0,10);
+  a.download = `travelfx-backup-${date}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast("Backup file saved");
+}
+function importJsonFile(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const data = JSON.parse(fr.result);
+      if (data.state && typeof data.state === "object") {
+        state = { ...defaultState, ...data.state };
+        saveState();
+      }
+      if (data.rates && data.rates.rates) {
+        rates = data.rates;
+        saveRates(rates);
+      }
+      render(); updateRatesMeta();
+      toast("Backup imported ✓");
+    } catch {
+      toast("Invalid backup file", true);
+    }
+  };
+  fr.readAsText(file);
+}
+function exportXlsx() {
+  if (typeof XLSX === "undefined") { toast("Excel library not loaded", true); return; }
+  const wb = XLSX.utils.book_new();
+
+  const usd = parseFloat(state.pinAmount) || 100;
+  const pinRows = [["TravelFX — Pinned currencies", ""], [`USD basis: $${usd}`, ""], [], ["Code","Name","Rate (1 USD =)","Value"]];
+  state.pinned.forEach(c => {
+    const m = CURRENCIES[c]; const r = rateOf(c);
+    pinRows.push([c, m?.name || c, r ?? "", r != null ? Number((usd*r).toFixed(4)) : ""]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(pinRows);
+  ws1["!cols"] = [{wch:8},{wch:24},{wch:18},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws1, "Pinned");
+
+  const rateRows = [["Code","Name","Rate (1 USD =)","Inverse (1 unit = USD)"]];
+  if (rates && rates.rates) {
+    Object.keys(rates.rates).sort().forEach(c => {
+      const r = rates.rates[c];
+      rateRows.push([c, (CURRENCIES[c]?.name || ""), r, r ? Number((1/r).toFixed(6)) : ""]);
+    });
+  }
+  const ws2 = XLSX.utils.aoa_to_sheet(rateRows);
+  ws2["!cols"] = [{wch:8},{wch:28},{wch:18},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, "All Rates");
+
+  const meta = [
+    ["TravelFX export"],
+    ["Exported", new Date().toLocaleString()],
+    ["Rates fetched", rates?.fetched ? new Date(rates.fetched).toLocaleString() : "—"],
+    ["Provider updated", rates?.providerUpdated ? new Date(rates.providerUpdated).toLocaleString() : "—"],
+    ["Source", rates?.source || "—"],
+    [],
+    ["Setting","Value"],
+    ["Selected currency", state.selectedCurrency],
+    ["Direction", state.direction],
+    ["Tax on?", state.taxOn ? "yes" : "no"],
+    ["Tax rate %", state.taxRate],
+    ["VAT %", state.vatRate],
+    ["Discount %", state.discRate],
+    ["Default tax %", state.defTaxRate],
+    ["Default VAT %", state.defVat],
+    ["Pinned", state.pinned.join(", ")],
+  ];
+  const ws3 = XLSX.utils.aoa_to_sheet(meta);
+  ws3["!cols"] = [{wch:22},{wch:36}];
+  XLSX.utils.book_append_sheet(wb, ws3, "Settings");
+
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `travelfx-${date}.xlsx`);
+  toast("Excel file saved");
+}
+
+/* TOAST */
+let toastTimer = null;
+function toast(msg, error = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.toggle("error", !!error);
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+/* EVENTS */
+function bind() {
+  document.querySelectorAll(".nav button").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll(".nav button").forEach(x => x.classList.remove("active"));
+      document.querySelectorAll(".view").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      document.getElementById(`view-${b.dataset.view}`).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+  });
+
+  document.getElementById("dirUSDtoFX").onclick = () => {
+    state.direction = "USD2FX"; saveState(); renderConvert();
+  };
+  document.getElementById("dirFXtoUSD").onclick = () => {
+    state.direction = "FX2USD"; saveState(); renderConvert();
+  };
+
+  document.getElementById("curPickBtn").onclick = () => openCurrencyModal("select");
+  document.getElementById("modalBack").onclick = closeCurrencyModal;
+  document.getElementById("curSearch").oninput = (e) => renderModalList(e.target.value);
+
+  document.getElementById("amountInput").oninput = (e) => {
+    state.amount = e.target.value;
+    saveState();
+    renderConvert();
+  };
+
+  document.getElementById("optsToggle").onclick = function() {
+    this.classList.toggle("open");
+    document.getElementById("optsBody").classList.toggle("open");
+  };
+
+  document.getElementById("taxSwitch").onclick = function() {
+    state.taxOn = !state.taxOn;
+    this.classList.toggle("on", state.taxOn);
+    saveState(); renderConvert();
+  };
+
+  document.getElementById("taxRate").oninput = e => { state.taxRate = parseFloat(e.target.value)||0; saveState(); renderConvert(); };
+  document.getElementById("vatRate").oninput = e => { state.vatRate = parseFloat(e.target.value)||0; saveState(); renderConvert(); };
+  document.getElementById("discRate").oninput = e => { state.discRate = parseFloat(e.target.value)||0; saveState(); renderConvert(); };
+
+  document.getElementById("pinAmount").oninput = e => {
+    state.pinAmount = e.target.value; saveState(); renderPinned();
+  };
+  document.getElementById("addPinBtn").onclick = () => openCurrencyModal("pin");
+
+  document.getElementById("defTaxRate").oninput = e => {
+    const v = parseFloat(e.target.value)||0;
+    state.defTaxRate = v;
+    state.taxRate = v;
+    saveState(); renderConvert();
+  };
+  document.getElementById("defVat").oninput = e => {
+    state.defVat = parseFloat(e.target.value)||0;
+    state.vatRate = state.defVat;
+    saveState(); renderConvert();
+  };
+  document.getElementById("refreshBtn").onclick = () => fetchRates();
+
+  document.getElementById("exportJsonBtn").onclick = exportJson;
+  document.getElementById("exportXlsxBtn").onclick = exportXlsx;
+  document.getElementById("importJsonBtn").onclick = () => document.getElementById("importFile").click();
+  document.getElementById("importFile").onchange = (e) => {
+    const f = e.target.files[0];
+    if (f) importJsonFile(f);
+    e.target.value = "";
+  };
+
+  // Pull-down at top to refresh
+  let touchStartY = 0;
+  document.addEventListener("touchstart", (e) => {
+    if (window.scrollY === 0) touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (touchStartY > 0) {
+      const dy = (e.changedTouches[0].clientY - touchStartY);
+      if (dy > 80 && window.scrollY === 0) fetchRates();
+    }
+    touchStartY = 0;
+  }, { passive: true });
+
+  if (state.taxOn || state.vatRate > 0 || state.discRate > 0) {
+    document.getElementById("optsToggle").classList.add("open");
+    document.getElementById("optsBody").classList.add("open");
+  }
+}
+
+/* BOOT */
+function init() {
+  bind();
+  if (rates) {
+    setStatus("cached", "Cached");
+    updateRatesMeta();
+  } else {
+    setStatus("loading", "Loading…");
+  }
+  render();
+  fetchRates();
+}
+document.addEventListener("DOMContentLoaded", init);
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

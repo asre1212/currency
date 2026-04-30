@@ -1,0 +1,17 @@
+{
+  "name": "TravelFX — Currency for Travelers",
+  "short_name": "TravelFX",
+  "description": "Real-time travel currency conversion with VAT, tax, and discount support. Pin your favorite currencies for one-tap access.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a4d68",
+  "theme_color": "#0a4d68",
+  "categories": ["finance", "travel", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

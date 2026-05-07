@@ -849,15 +849,22 @@ function calcUSDtoFX(input, code) {
   const fxFinal = usdTotal * rate;
   return { rate, usdBase: input, usdAfterTax: usdTotal, fxFinal };
 }
-// Foreign → USD: optional VAT discount subtracts from FX, then show USD direct + USD + tax.
+// Foreign → USD: VAT (when set) is subtracted from the foreign amount.
+// We always return the ORIGINAL foreign→USD value AND, if VAT > 0, the discounted version + tax.
 function calcFXtoUSD(input, code) {
   const rate = rateOf(code);
   if (!isFinite(input) || rate == null || rate === 0) return null;
   const vat = state.vatRate / 100;
+  const usdOriginal = input / rate;                          // entered amount → USD
+  const usdOriginalWithTax = usdOriginal * (1 + state.taxRate / 100);
   const fxAfterDiscount = input * (1 - vat);
-  const usd = fxAfterDiscount / rate;
-  const usdWithTax = usd * (1 + state.taxRate / 100);
-  return { rate, fxBase: input, fxAfterDiscount, vatPct: state.vatRate, usd, usdWithTax };
+  const usdDiscounted = fxAfterDiscount / rate;              // (FX − VAT%) → USD
+  const usdDiscountedWithTax = usdDiscounted * (1 + state.taxRate / 100);
+  return {
+    rate, fxBase: input, vatPct: state.vatRate,
+    usdOriginal, usdOriginalWithTax,
+    fxAfterDiscount, usdDiscounted, usdDiscountedWithTax,
+  };
 }
 
 /* RENDER */
@@ -925,17 +932,18 @@ function renderConvert() {
     `;
     rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code}`;
   } else {
-    // FX → USD: USD direct, USD + tax. Optional VAT discount lowers the FX before converting.
+    // FX → USD. Always show original conversion; when VAT > 0, also show discounted USD and discounted+tax.
     const r = calcFXtoUSD(amount, code);
     const vatApplied = r.vatPct > 0;
-    lbl.textContent = vatApplied ? `USD after ${r.vatPct}% VAT discount` : "USD equivalent";
-    big.textContent = fmt(r.usd, "USD");
-    const rows = [
-      { k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.usdWithTax, "USD") },
-    ];
+    lbl.textContent = "USD equivalent";
+    big.textContent = fmt(r.usdOriginal, "USD");
+    const rows = [];
     if (vatApplied) {
+      rows.push({ k: `After ${r.vatPct}% VAT discount`, v: fmt(r.usdDiscounted, "USD") });
+      rows.push({ k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.usdDiscountedWithTax, "USD") });
       rows.push({ k: `Foreign after −${r.vatPct}%`, v: fmt(r.fxAfterDiscount, code) });
     } else {
+      rows.push({ k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.usdOriginalWithTax, "USD") });
       rows.push({ k: "Foreign entered", v: fmt(r.fxBase, code) });
     }
     sec.innerHTML = rows.map(x =>

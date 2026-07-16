@@ -488,13 +488,13 @@
           </div>
         </div>
 
-        <!-- VAT discount (Foreign → USD only) -->
-        <div id="vatBlock" style="display:none">
+        <!-- VAT rate included in foreign listed prices -->
+        <div id="vatBlock">
           <div class="divider"></div>
           <div class="switch-row" style="border:0; padding-top:0">
             <div>
-              <div class="lbl">VAT discount / refund</div>
-              <div class="sub">Subtracts from the foreign price before converting</div>
+              <div class="lbl">VAT included in foreign price</div>
+              <div class="sub" id="vatSub">Removed before converting to USD</div>
             </div>
             <div class="field-mini" style="width:108px">
               <input id="vatRate" type="number" step="0.1" min="0" max="100" value="0" inputmode="decimal"/>
@@ -503,14 +503,14 @@
           </div>
         </div>
 
-        <!-- Tax info note (USD → Foreign only) -->
+        <!-- Tax info note -->
         <div id="taxNote" class="meta-line" style="margin-top:10px">
-          Includes <strong><span id="taxNoteRate">7.5</span>% U.S. sales tax</strong> automatically. Change the rate in Settings.
+          Conversions <strong>exclude U.S. sales tax</strong>. The <span id="taxNoteRate">7.5</span>% rate from Settings appears only as a comparison line.
         </div>
       </div>
 
       <div class="result" id="resultCard">
-        <div class="label" id="resultLabel">Maximum price</div>
+        <div class="label" id="resultLabel">USD equivalent</div>
         <div class="big" id="resultBig">€0.00</div>
         <div class="secondary" id="resultSecondary"></div>
         <div class="rate-line" id="resultRate">Rate unavailable</div>
@@ -570,7 +570,7 @@
         <div class="switch-row">
           <div>
             <div class="lbl">U.S. sales tax rate</div>
-            <div class="sub">Applied automatically to all conversions</div>
+            <div class="sub">Comparison line only — never added into conversions</div>
           </div>
           <div class="field-mini" style="width:108px">
             <input id="defTaxRate" type="number" step="0.1" min="0" max="100" value="7.5" inputmode="decimal"/>
@@ -579,8 +579,8 @@
         </div>
         <div class="switch-row">
           <div>
-            <div class="lbl">Default VAT discount</div>
-            <div class="sub">Pre-fills the VAT discount field on Foreign → USD</div>
+            <div class="lbl">Default VAT rate</div>
+            <div class="sub">Pre-fills the VAT field on the Convert tab</div>
           </div>
           <div class="field-mini" style="width:108px">
             <input id="defVat" type="number" step="0.1" min="0" max="100" value="0" inputmode="decimal"/>
@@ -736,8 +736,8 @@ const defaultState = {
   direction: "USD2FX",
   amount: "100",
   pinAmount: "100",
-  taxRate: 7.5,        // U.S. sales tax — applied automatically in USD→FX, and to "+ tax" line in FX→USD
-  vatRate: 0,          // VAT discount / refund in FX→USD, subtracts from foreign amount
+  taxRate: 7.5,        // U.S. sales tax — comparison line only, never added into conversions
+  vatRate: 0,          // VAT rate included in foreign listed prices, stripped when converting to USD
   defTaxRate: 7.5,
   defVat: 0,
 };
@@ -841,30 +841,36 @@ function rateOf(code) {
   return rates.rates[code] ?? null;
 }
 
-/* CALCULATIONS */
-// USD → Foreign: always apply U.S. sales tax, then convert. One number out.
+/* CALCULATIONS
+   Price-tag comparison model:
+   - Foreign price tags INCLUDE VAT; U.S. price tags EXCLUDE sales tax.
+   - Foreign → USD: strip the VAT contained in the listed price
+     (net = listed / (1 + vat%), since VAT is charged on the net),
+     then convert. No U.S. tax is added — the result is the comparable
+     U.S. price tag. U.S. tax appears only as an informational line.
+   - USD → Foreign: the exact inverse — convert, then add VAT back to
+     get the expected foreign price tag. */
 function calcUSDtoFX(input, code) {
   const rate = rateOf(code);
   if (!isFinite(input) || rate == null) return null;
-  const usdTotal = input * (1 + state.taxRate / 100);
-  const fxFinal = usdTotal * rate;
-  return { rate, usdBase: input, usdAfterTax: usdTotal, fxFinal };
+  const vat = state.vatRate / 100;
+  const fxNet = input * rate;                                // ex-VAT foreign value
+  const fxListed = fxNet * (1 + vat);                        // expected price tag abroad (VAT incl.)
+  const usdWithUsTax = input * (1 + state.taxRate / 100);    // info: U.S. register total
+  return { rate, usdBase: input, vatPct: state.vatRate, fxNet, fxListed, usdWithUsTax };
 }
-// Foreign → USD: VAT (when set) is subtracted from the foreign amount.
-// We always return the ORIGINAL foreign→USD value AND, if VAT > 0, the discounted version + tax.
 function calcFXtoUSD(input, code) {
   const rate = rateOf(code);
   if (!isFinite(input) || rate == null || rate === 0) return null;
   const vat = state.vatRate / 100;
-  const usdOriginal = input / rate;                          // entered amount → USD
-  const usdOriginalWithTax = usdOriginal * (1 + state.taxRate / 100);
-  const fxAfterDiscount = input * (1 - vat);
-  const usdDiscounted = fxAfterDiscount / rate;              // (FX − VAT%) → USD
-  const usdDiscountedWithTax = usdDiscounted * (1 + state.taxRate / 100);
+  const fxNet = input / (1 + vat);                           // listed price with included VAT stripped
+  const vatAmountFx = input - fxNet;                         // VAT contained in the listed price
+  const usdNet = fxNet / rate;                               // comparable U.S. price tag (ex-VAT, pre-tax)
+  const usdGross = input / rate;                             // listed amount converted as-is
+  const usdNetWithUsTax = usdNet * (1 + state.taxRate / 100);// info: U.S. register total
   return {
     rate, fxBase: input, vatPct: state.vatRate,
-    usdOriginal, usdOriginalWithTax,
-    fxAfterDiscount, usdDiscounted, usdDiscountedWithTax,
+    fxNet, vatAmountFx, usdNet, usdGross, usdNetWithUsTax,
   };
 }
 
@@ -895,9 +901,10 @@ function renderConvert() {
   const amtEl = document.getElementById("amountInput");
   if (document.activeElement !== amtEl) amtEl.value = state.amount ?? "";
 
-  // Show VAT discount block only for FX → USD; show tax-info note only for USD → FX
-  document.getElementById("vatBlock").style.display = isUSD2FX ? "none" : "";
-  document.getElementById("taxNote").style.display = isUSD2FX ? "" : "none";
+  // VAT field applies in both directions (stripped FX→USD, added back USD→FX)
+  document.getElementById("vatSub").textContent = isUSD2FX
+    ? "Added back to estimate the foreign price tag"
+    : "Removed before converting to USD";
   document.getElementById("taxNoteRate").textContent = state.taxRate;
   if (document.activeElement.id !== "vatRate") document.getElementById("vatRate").value = state.vatRate;
 
@@ -916,37 +923,43 @@ function renderConvert() {
   }
   if (!isFinite(amount) || amount <= 0) {
     big.textContent = isUSD2FX ? fmt(0, code) : fmt(0, "USD");
-    lbl.textContent = isUSD2FX ? "Total in foreign currency" : "USD equivalent";
+    lbl.textContent = isUSD2FX ? "Foreign price tag" : "USD equivalent (ex-VAT)";
     sec.innerHTML = "";
     rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code} · 1 ${code} = ${fmt(1/rate, "USD", { bare: true, decimals: 4 })} USD`;
     return;
   }
 
   if (isUSD2FX) {
-    // Single, simple result: USD × (1 + tax) × rate
+    // U.S. price tag → expected foreign price tag: convert, then add VAT back.
     const r = calcUSDtoFX(amount, code);
-    lbl.textContent = "Total in foreign currency";
-    big.textContent = fmt(r.fxFinal, code);
-    sec.innerHTML = `
-      <div><div class="k">USD entered</div><div class="v">${fmt(r.usdBase, "USD")}</div></div>
-      <div><div class="k">+ ${state.taxRate}% U.S. tax</div><div class="v">${fmt(r.usdAfterTax, "USD")}</div></div>
-    `;
+    const vatApplied = r.vatPct > 0;
+    lbl.textContent = vatApplied ? `Foreign price tag (incl. ${r.vatPct}% VAT)` : "Foreign price tag";
+    big.textContent = fmt(r.fxListed, code);
+    const rows = [];
+    rows.push({ k: "USD entered (pre-tax)", v: fmt(r.usdBase, "USD") });
+    if (vatApplied) rows.push({ k: "Converted, before VAT", v: fmt(r.fxNet, code) });
+    rows.push({ k: `U.S. register total (+${state.taxRate}% tax)`, v: fmt(r.usdWithUsTax, "USD") });
+    sec.innerHTML = rows.map(x =>
+      `<div><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
+    ).join("");
     rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code}`;
   } else {
-    // FX → USD. Always show original conversion; when VAT > 0, also show discounted USD and discounted+tax.
+    // Foreign price tag → comparable U.S. price tag: strip included VAT, convert.
     const r = calcFXtoUSD(amount, code);
     const vatApplied = r.vatPct > 0;
-    lbl.textContent = "USD equivalent";
-    big.textContent = fmt(r.usdOriginal, "USD");
+    lbl.textContent = vatApplied
+      ? `USD equivalent (excl. ${r.vatPct}% VAT & U.S. tax)`
+      : "USD equivalent (pre-tax)";
+    big.textContent = fmt(r.usdNet, "USD");
     const rows = [];
     if (vatApplied) {
-      rows.push({ k: `After ${r.vatPct}% VAT discount`, v: fmt(r.usdDiscounted, "USD") });
-      rows.push({ k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.usdDiscountedWithTax, "USD") });
-      rows.push({ k: `Foreign after −${r.vatPct}%`, v: fmt(r.fxAfterDiscount, code) });
+      rows.push({ k: "Listed price converted", v: fmt(r.usdGross, "USD") });
+      rows.push({ k: `VAT in listed price (${r.vatPct}%)`, v: fmt(r.vatAmountFx, code) });
+      rows.push({ k: "Foreign net of VAT", v: fmt(r.fxNet, code) });
     } else {
-      rows.push({ k: `+ ${state.taxRate}% U.S. tax`, v: fmt(r.usdOriginalWithTax, "USD") });
       rows.push({ k: "Foreign entered", v: fmt(r.fxBase, code) });
     }
+    rows.push({ k: `U.S. register total (+${state.taxRate}% tax)`, v: fmt(r.usdNetWithUsTax, "USD") });
     sec.innerHTML = rows.map(x =>
       `<div><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
     ).join("");

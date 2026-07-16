@@ -8,8 +8,9 @@ All your data stays on your phone.
 
 - **Live USD ↔ foreign currency** with rates from `open.er-api.com` (no API key, no signup)
 - **Pin any currencies** for one-tap conversion at a glance
-- **USD → Foreign**: optional 7.5% U.S. sales tax (configurable), VAT %, discount %
-- **Foreign → USD**: instant USD value, plus the price *with* U.S. sales tax for fair comparison
+- **Foreign → USD**: strips the VAT included in the foreign price tag (`price ÷ (1 + VAT%)`), then converts — the result is the comparable pre-tax U.S. price, with no U.S. sales tax added
+- **USD → Foreign**: the exact inverse — converts your pre-tax U.S. price and adds VAT back to estimate the foreign price tag
+- **U.S. sales tax** (configurable, default 7.5%) is shown as a comparison line only — never baked into conversions
 - **Phone-to-phone transfer**: export/import a JSON backup of all your settings
 - **Excel export (.xlsx)**: full rate table + your pinned currencies + settings
 - **Works offline** after first visit (PWA / service worker)

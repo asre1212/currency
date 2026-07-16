@@ -1,5 +1,5 @@
 /* TravelFX service worker — offline shell */
-const CACHE = "travelfx-v1";
+const CACHE = "travelfx-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -43,7 +43,21 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Cache-first for app shell
+  // Network-first for the HTML shell so logic updates reach users immediately
+  if (e.request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+        }
+        return res;
+      }).catch(() => caches.match(e.request).then(c => c || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // Cache-first for static assets
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res.ok && (url.origin === location.origin || url.hostname === "cdnjs.cloudflare.com")) {

@@ -262,14 +262,19 @@
   .result .label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; position: relative; }
   .result .big { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; line-height: 1.05; word-break: break-word; position: relative; }
   .result .secondary {
-    margin-top: 14px; padding-top: 14px;
+    margin-top: 14px; padding-top: 4px;
     border-top: 1px solid rgba(255,255,255,0.18);
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px;
+    display: flex; flex-direction: column;
     font-size: 13px;
     position: relative;
   }
-  .result .secondary .k { opacity: 0.78; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .result .secondary .v { font-weight: 600; font-size: 15px; }
+  .result .secondary .srow {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 9px 0;
+  }
+  .result .secondary .srow + .srow { border-top: 1px solid rgba(255,255,255,0.12); }
+  .result .secondary .k { opacity: 0.78; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; flex: 1; }
+  .result .secondary .v { font-weight: 600; font-size: 15px; text-align: right; }
   .result .rate-line { margin-top: 12px; font-size: 12px; opacity: 0.78; position: relative; }
 
   .pin-list { display: flex; flex-direction: column; gap: 8px; }
@@ -842,22 +847,24 @@ function rateOf(code) {
 }
 
 /* CALCULATIONS
-   Price-tag comparison model:
    - Foreign price tags INCLUDE VAT; U.S. price tags EXCLUDE sales tax.
-   - Foreign → USD: strip the VAT contained in the listed price
-     (net = listed / (1 + vat%), since VAT is charged on the net),
-     then convert. No U.S. tax is added — the result is the comparable
-     U.S. price tag. U.S. tax appears only as an informational line.
-   - USD → Foreign: the exact inverse — convert, then add VAT back to
-     get the expected foreign price tag. */
+   - Foreign → USD: headline is the direct conversion; the list below
+     shows the VAT contained in the listed price removed correctly
+     (net = listed / (1 + vat%), since VAT is charged on the net) with
+     its USD value, plus a U.S. pricing comparison (+sales tax from
+     Settings) in both currencies. U.S. tax is never baked in.
+   - USD → Foreign: direct conversion, with the U.S. register total
+     (+sales tax) in foreign currency and the VAT-inclusive price tag
+     as list rows. */
 function calcUSDtoFX(input, code) {
   const rate = rateOf(code);
   if (!isFinite(input) || rate == null) return null;
   const vat = state.vatRate / 100;
-  const fxNet = input * rate;                                // ex-VAT foreign value
+  const fxNet = input * rate;                                // direct conversion
   const fxListed = fxNet * (1 + vat);                        // expected price tag abroad (VAT incl.)
-  const usdWithUsTax = input * (1 + state.taxRate / 100);    // info: U.S. register total
-  return { rate, usdBase: input, vatPct: state.vatRate, fxNet, fxListed, usdWithUsTax };
+  const usdWithUsTax = input * (1 + state.taxRate / 100);    // U.S. register total
+  const fxWithUsTax = usdWithUsTax * rate;                   // that total in foreign currency
+  return { rate, usdBase: input, vatPct: state.vatRate, fxNet, fxListed, usdWithUsTax, fxWithUsTax };
 }
 function calcFXtoUSD(input, code) {
   const rate = rateOf(code);
@@ -865,12 +872,13 @@ function calcFXtoUSD(input, code) {
   const vat = state.vatRate / 100;
   const fxNet = input / (1 + vat);                           // listed price with included VAT stripped
   const vatAmountFx = input - fxNet;                         // VAT contained in the listed price
-  const usdNet = fxNet / rate;                               // comparable U.S. price tag (ex-VAT, pre-tax)
-  const usdGross = input / rate;                             // listed amount converted as-is
-  const usdNetWithUsTax = usdNet * (1 + state.taxRate / 100);// info: U.S. register total
+  const usdNet = fxNet / rate;                               // ex-VAT value in USD
+  const usdGross = input / rate;                             // direct conversion of the listed amount
+  const usdGrossWithTax = usdGross * (1 + state.taxRate / 100); // U.S. comparison: direct + sales tax
+  const fxGrossWithTax = usdGrossWithTax * rate;             // that total in foreign currency
   return {
     rate, fxBase: input, vatPct: state.vatRate,
-    fxNet, vatAmountFx, usdNet, usdGross, usdNetWithUsTax,
+    fxNet, vatAmountFx, usdNet, usdGross, usdGrossWithTax, fxGrossWithTax,
   };
 }
 
@@ -921,48 +929,57 @@ function renderConvert() {
     rl.textContent = "Tap Settings → Refresh to load rates";
     return;
   }
+  const listRows = rows => rows.map(x =>
+    `<div class="srow"><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
+  ).join("");
+
   if (!isFinite(amount) || amount <= 0) {
     big.textContent = isUSD2FX ? fmt(0, code) : fmt(0, "USD");
-    lbl.textContent = isUSD2FX ? "Foreign price tag" : "USD equivalent (ex-VAT)";
+    lbl.textContent = isUSD2FX ? `USD → ${code}` : `${code} → USD`;
     sec.innerHTML = "";
     rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code} · 1 ${code} = ${fmt(1/rate, "USD", { bare: true, decimals: 4 })} USD`;
     return;
   }
 
   if (isUSD2FX) {
-    // U.S. price tag → expected foreign price tag: convert, then add VAT back.
+    // Direct conversion on top; U.S. register total (in foreign too) and
+    // VAT-inclusive price tag as list rows.
     const r = calcUSDtoFX(amount, code);
     const vatApplied = r.vatPct > 0;
-    lbl.textContent = vatApplied ? `Foreign price tag (incl. ${r.vatPct}% VAT)` : "Foreign price tag";
-    big.textContent = fmt(r.fxListed, code);
+    lbl.textContent = `${fmt(r.usdBase, "USD")} → ${code} (direct)`;
+    big.textContent = fmt(r.fxNet, code);
     const rows = [];
-    rows.push({ k: "USD entered (pre-tax)", v: fmt(r.usdBase, "USD") });
-    if (vatApplied) rows.push({ k: "Converted, before VAT", v: fmt(r.fxNet, code) });
-    rows.push({ k: `U.S. register total (+${state.taxRate}% tax)`, v: fmt(r.usdWithUsTax, "USD") });
-    sec.innerHTML = rows.map(x =>
-      `<div><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
-    ).join("");
+    rows.push({
+      k: `+ ${state.taxRate}% U.S. sales tax (${fmt(r.usdWithUsTax, "USD")})`,
+      v: fmt(r.fxWithUsTax, code),
+    });
+    if (vatApplied) {
+      rows.push({
+        k: `+ ${r.vatPct}% VAT — foreign price tag`,
+        v: fmt(r.fxListed, code),
+      });
+    }
+    sec.innerHTML = listRows(rows);
     rl.textContent = `1 USD = ${fmt(rate, code, { bare: true })} ${code}`;
   } else {
-    // Foreign price tag → comparable U.S. price tag: strip included VAT, convert.
+    // Direct conversion on top; below it the VAT contained in the listed
+    // price removed (with the USD value), then the U.S. pricing comparison.
     const r = calcFXtoUSD(amount, code);
     const vatApplied = r.vatPct > 0;
-    lbl.textContent = vatApplied
-      ? `USD equivalent (excl. ${r.vatPct}% VAT & U.S. tax)`
-      : "USD equivalent (pre-tax)";
-    big.textContent = fmt(r.usdNet, "USD");
+    lbl.textContent = `${fmt(r.fxBase, code)} → USD (direct)`;
+    big.textContent = fmt(r.usdGross, "USD");
     const rows = [];
     if (vatApplied) {
-      rows.push({ k: "Listed price converted", v: fmt(r.usdGross, "USD") });
-      rows.push({ k: `VAT in listed price (${r.vatPct}%)`, v: fmt(r.vatAmountFx, code) });
-      rows.push({ k: "Foreign net of VAT", v: fmt(r.fxNet, code) });
-    } else {
-      rows.push({ k: "Foreign entered", v: fmt(r.fxBase, code) });
+      rows.push({
+        k: `− ${r.vatPct}% VAT (−${fmt(r.vatAmountFx, code)})`,
+        v: `${fmt(r.usdNet, "USD")} · ${fmt(r.fxNet, code)}`,
+      });
     }
-    rows.push({ k: `U.S. register total (+${state.taxRate}% tax)`, v: fmt(r.usdNetWithUsTax, "USD") });
-    sec.innerHTML = rows.map(x =>
-      `<div><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`
-    ).join("");
+    rows.push({
+      k: `+ ${state.taxRate}% U.S. sales tax`,
+      v: `${fmt(r.usdGrossWithTax, "USD")} · ${fmt(r.fxGrossWithTax, code)}`,
+    });
+    sec.innerHTML = listRows(rows);
     rl.textContent = `1 ${code} = ${fmt(1/rate, "USD", { bare: true, decimals: 4 })} USD`;
   }
 }
